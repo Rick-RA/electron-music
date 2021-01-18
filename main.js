@@ -2,6 +2,9 @@
 const {app, BrowserWindow, ipcMain, dialog } = require('electron')
 const path = require('path')
 
+let mainWindow = null
+let addMusicWindow = null
+
 class AppWindow extends BrowserWindow{
   constructor(config, fileLocation) {
     const basicConfig = {
@@ -18,19 +21,18 @@ class AppWindow extends BrowserWindow{
 }
 
 function createWindow () {
-  var mainWindow
   // Create the browser window.
+  if(mainWindow) return
   mainWindow = new AppWindow({}, './renderer/index.html')
-  let addMusicWindow
   ipcMain.on('add-music-window', () => {
-    console.log('-----add-music-window-----')
+    if (addMusicWindow) return addMusicWindow
     addMusicWindow = new AppWindow({
       width: 600,
       height: 400,
     }, './renderer/add.html')
   })
 
-    ipcMain.on('open-music-file', (event) => {
+  ipcMain.on('open-music-file', (event) => {
     console.log('----open-music-file---')
     dialog.showOpenDialog({
       properties: ['openFile', 'multiSelections'],
@@ -38,13 +40,15 @@ function createWindow () {
         { name: 'Music', extensions: ['mp3'] },
       ]
     }).then(res => {
-      console.log('----event.sender-------')
-      console.log(event.sender)
-      console.log(res)
-      event.sender.send('selected-file', res)
+      let filePaths = res.filePaths || []
+      event.sender.send('selected-file', filePaths)
     }).catch(err => {
 
     })
+  })
+
+  ipcMain.on('import-music', (event, args) => {
+
   })
 
   // Open the DevTools.
